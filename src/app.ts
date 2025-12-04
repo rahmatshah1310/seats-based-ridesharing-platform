@@ -5,20 +5,15 @@ import session from "express-session";
 import createError from "http-errors";
 import path from "path";
 import { fileURLToPath } from "url";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-
-
 // Drizzle DB (optional to touch here)
 import { connection } from "@/db/db";
-
-// import loggerMiddleware from "./middlewares/logger.mw";
-// import responseMiddleware from "./middlewares/response.mw";
+import { loggerMiddleware } from "./middlewares/logger.mw";
+import { responseMiddleware } from "./middlewares/response.mw";
 
 // Routes
-// import apiRouter from "@/routes/api/index";
+import apiRouter from "./rotues/index";
 
 const app = express();
 
@@ -32,24 +27,30 @@ const app = express();
   }
 })();
 
-// app.use(responseMiddleware);
+app.use(responseMiddleware);
 
 // Body parsers
 app.use(express.urlencoded({ extended: true, limit: "200mb" }));
 app.use(express.json({ limit: "200mb" }));
 
-// app.use(loggerMiddleware);
+app.use(loggerMiddleware);
 
 // CORS
 app.use(cors());
-
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://68.183.112.7", "http://localhost:5173/"],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+  })
+);
 // Session
 app.use(
   session({
     secret: "secret2024",
     resave: false,
     saveUninitialized: false,
-  }),
+  })
 );
 
 app.set("view engine", "ejs");
@@ -62,7 +63,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // API routes
-// app.use("/api/v1", apiRouter);
+app.use("/api/v1", apiRouter);
 
 // 404 handler
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -70,19 +71,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Error handler
-app.use(
-  (err: any, req: Request, res: Response, next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    console.error(`${status} - ${message} - ${req.method} ${req.path}`);
-    
-    if (req.path.startsWith("/api")) {
-      res.status(status).json({ message, status });
-    } else {
-      res.status(status).send(message);
-    }
-  },
-);
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  console.error(`${status} - ${message} - ${req.method} ${req.path}`);
+
+  if (req.path.startsWith("/api")) {
+    res.status(status).json({ message, status });
+  } else {
+    res.status(status).send(message);
+  }
+});
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
