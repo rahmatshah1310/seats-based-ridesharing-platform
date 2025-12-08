@@ -9,6 +9,7 @@
     "start": "node dist/bin/seats-based-ridesharing-platform.js",
     "build": "tsc && tsc-alias",
     "db:generate": "drizzle-kit generate",
+     "db:studio": "drizzle-kit studio",
     "db:migrate": "cross-env DB_MIGRATING=true tsx src/db/migrate.ts",
     "db:seed": "cross-env DB_SEEDING=true tsx src/db/seed.ts"
   },
@@ -30,7 +31,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "cloudinary": "^2.8.0",
+    "cloudinary": "^1.37.0",
     "cors": "^2.8.5",
     "debug": "^4.4.3",
     "dotenv": "^16.4.5",
