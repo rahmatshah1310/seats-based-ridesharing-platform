@@ -9,3 +9,6 @@ if (!process.env.DB_MIGRATING) {
 await migrate(db, { migrationsFolder: config.out! });
 
 await connection.end();
+
+
+
