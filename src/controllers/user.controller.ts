@@ -6,6 +6,7 @@ import {
   deleteUsers,
   loginUser,
   getCurrentUser,
+  approveDriver,
 } from "@/services/user.service";
 import type { userRole } from "@/db/types/user.types";
 import type { Controller } from "@/db/types/controller";
@@ -83,7 +84,7 @@ export const login: Controller = async (req, res) => {
         user: serializedUser,
         ...(serializedProfile && { profile: serializedProfile }),
       },
-      "User logged in successfully"
+      "User logged in successfully",
     );
   } catch (error) {
     console.error("UserController [loginUser] Error:", error);
@@ -94,7 +95,12 @@ export const login: Controller = async (req, res) => {
 export const get_me: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number((req as any).user?._id);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return r.fail("Unauthorized");
+    }
+
     const userData = await getCurrentUser(userId);
     if (!userData) {
       return r.fail("User not found");
@@ -124,13 +130,14 @@ export const get_me: Controller = async (req, res) => {
         ...serializedUser,
         ...(serializedProfile && { profile: serializedProfile }),
       },
-      "Current user retrieved successfully"
+      "Current user retrieved successfully",
     );
   } catch (error) {
     console.error("UserController [get_me] Error:", error);
     r.serverError(error);
   }
 };
+
 export const getUserProfile: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
@@ -181,21 +188,15 @@ export const deleteUser: Controller = async (req, res) => {
   }
 };
 
-export const changeRole = async (req, res) => {
+export const driverApprove: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const userId = Number(req.user?.id);
-    const newRole = req.body.role as userRole;
-    const user = await getUserById(userId);
-  } catch (error) {}
+    const userId = Number(req.params.id);
+    const approvedUser = await approveDriver(userId);
+    return r.success(approvedUser, "Driver Approved Successfully");
+  } catch (error) {
+    console.error("UserController [driverApprove] Error:", error);
+    r.serverError(error);
+  }
 };
 
-export default {
-  registerUser,
-  login,
-  getUserProfile,
-  allUsers,
-  getUsersByRole,
-  deleteUser,
-  get_me,
-};
