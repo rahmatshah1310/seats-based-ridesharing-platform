@@ -5,21 +5,6 @@ import { db } from "@/db/db";
 import { and, eq, ne } from "drizzle-orm";
 import type { CreateUserInput, userRole } from "@/db/types/user.types";
 
-type DriverReq = {
-  licenseNumber: string;
-  licenseExpiry: string;
-  vehicleName: string;
-  vehicleColor: string;
-  vehicleModel: string;
-  vehicleNumberPlate: string;
-};
-
-type PassengerReq = {
-  city: string;
-  district: string;
-  country: string;
-};
-
 export const createUser = async (userData: CreateUserInput) => {
   try {
     return await db.transaction(async (tx) => {
@@ -34,7 +19,9 @@ export const createUser = async (userData: CreateUserInput) => {
           country: userData.country,
           profileImage: userData.profileImage ?? null,
           vehicleImages:
-            userData.role === "driver" ? userData.vehicleImages ?? null : null,
+            userData.role === "driver"
+              ? (userData.vehicleImages ?? null)
+              : null,
           role: userData.role || "passenger",
         })
         .returning();
@@ -175,6 +162,10 @@ export const getUserById = async (userId: number) => {
 
 export const getCurrentUser = async (userId: number) => {
   try {
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new Error("Invalid user id");
+    }
+
     const currentUser = await getUserById(userId);
     if (!currentUser) {
       throw new Error("User not found");
@@ -231,22 +222,24 @@ export const deleteUsers = async (userId: number) => {
   }
 };
 
-export const updateProfile = async (userId: number, updateData: {}) => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error("User not found");
-  }
-  const updatedUser=await db.update(user).set({...updateData}).
-};
-
-export const changeRole = async (userId: number, targetRole: userRole) => {
+export const approveDriver = async (userId: number) => {
   try {
-    const updateUser = await db
+    if (!userId) {
+      throw new Error("User id is required");
+    }
+    const approveDriver = await db
       .update(users)
       .set({
-        role: targetRole,
+        isDriverApproved: true,
       })
       .where(eq(users.id, userId));
-    return updateUser;
-  } catch (error) {}
+
+    if (!approveDriver) {
+      throw new Error("Could not approve driver");
+    }
+    return approveDriver;
+  } catch (error) {
+    console.error("UserService [approveDriver] Error:", error);
+    throw new Error("Could not approve driver");
+  }
 };
