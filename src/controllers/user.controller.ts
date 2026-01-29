@@ -199,4 +199,3 @@ export const driverApprove: Controller = async (req, res) => {
     r.serverError(error);
   }
 };
-
