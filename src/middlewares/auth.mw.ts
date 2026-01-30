@@ -8,7 +8,9 @@ import type { AuthUser } from "@/helpers/jwt";
 export const ensureAuthenticated: RequestHandler = async (req, res, next) => {
   const r = res as ResponseWithHelpers;
 
-  const auth = (req.headers.authorization || req.headers.Authorization) as string | undefined;
+  const auth = (req.headers.authorization || req.headers.Authorization) as
+    | string
+    | undefined;
 
   if (!auth) {
     return r.status(401).json({ message: "Unauthorized" });
@@ -27,13 +29,13 @@ export const ensureAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(raw, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+    const decoded = jwt.verify(raw, process.env.JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
 
     const userId = Number((decoded as { id: string }).id);
     const user = await getUserById(userId);
-
     if (!user) return r.fail("Unauthorized");
-
     if (user.status === "blocked") {
       return r.fail("Account is suspended.");
     }
@@ -50,9 +52,8 @@ export const ensureAuthenticated: RequestHandler = async (req, res, next) => {
   }
 };
 
-
-export const authorizeRoles = (...allowedRoles: userRole[]):RequestHandler => {
-  return (req: Request , res: Response, next: NextFunction) => {
+export const authorizeRoles = (...allowedRoles: userRole[]): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const r = res as ResponseWithHelpers;
 
     if (!req.user) return r.fail("Unauthorized");
@@ -66,7 +67,9 @@ export const authorizeRoles = (...allowedRoles: userRole[]):RequestHandler => {
     }
 
     if (userRole === "driver" && req.user.isDriverApproved !== true) {
-      return r.fail("Driver account requires admin approval before accessing this feature.");
+      return r.fail(
+        "Driver account requires admin approval before accessing this feature.",
+      );
     }
 
     return next();
