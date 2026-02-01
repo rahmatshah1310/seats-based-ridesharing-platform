@@ -1,0 +1,1 @@
+ALTER TABLE "rides" ALTER COLUMN "vehicle_id" DROP NOT NULL;
