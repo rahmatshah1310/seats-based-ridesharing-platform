@@ -15,6 +15,34 @@
       "when": 1765178165479,
       "tag": "0001_amazing_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769586947338,
+      "tag": "0002_youthful_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769587124127,
+      "tag": "0003_fixed_talisman",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769675461728,
+      "tag": "0004_silent_famine",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769677105503,
+      "tag": "0005_demonic_rage",
+      "breakpoints": true
     }
   ]
 }
