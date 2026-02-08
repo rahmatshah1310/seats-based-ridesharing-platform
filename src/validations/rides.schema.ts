@@ -5,7 +5,12 @@ export const createRideSchema = Joi.object({
   from: Joi.string().required(),
   to: Joi.string().required(),
   date: Joi.date().required(),
-  time: Joi.string().required(),
+  time: Joi.string()
+    .pattern(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
+    .required()
+    .messages({
+      "string.pattern.base": "Time must be HH:mm or HH:mm:ss",
+    }),
   availableSeats: Joi.number().required().min(1).max(7),
 });
 
