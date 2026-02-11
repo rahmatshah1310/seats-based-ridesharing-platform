@@ -1,4 +1,10 @@
-import { createRide, getAllRides, updateRide } from "@/services/rides.service";
+import {
+  createRide,
+  deleteRide,
+  getAllRides,
+  getRideById,
+  updateRide,
+} from "@/services/rides.service";
 import type { Controller } from "@/db/types/controller";
 import type { ResponseWithHelpers } from "@/middlewares/response.mw";
 import type { CreateRideInput } from "@/db/types/rides.types";
@@ -57,9 +63,35 @@ export const getallRidesController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
     const result = await getAllRides();
-    return result;
+    console.log(result, "result==========================>");
+    return r.success(result, "Rides fetched successfully");
   } catch (error) {
     console.error("RideController [getallRidesController] Error", error);
+    return r.serverError(error);
+  }
+};
+
+export const getRideByIdController: Controller = async (req, res) => {
+  const r = res as ResponseWithHelpers;
+  try {
+    const result = await getRideById(Number(req.params.rideId));
+    if (!result) {
+      return r.fail({ message: "Ride not found" });
+    }
+    return r.success(result, "Ride fetched successfully");
+  } catch (error) {
+    console.error("RidesController [getRideByIdController] Error:", error);
+    return r.serverError(error);
+  }
+};
+
+export const deleteRideController: Controller = async (req, res) => {
+  const r = res as ResponseWithHelpers;
+  try {
+    const result = await deleteRide(Number(req.params.rideId));
+    return r.success({ message: "Ride Deleted Successfully" });
+  } catch (error) {
+    console.error("RideController [deleteRideController] Error.", error);
     return r.serverError(error);
   }
 };
