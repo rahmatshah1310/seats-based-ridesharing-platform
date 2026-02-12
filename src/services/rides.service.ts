@@ -1,7 +1,7 @@
 import { rides } from "@/db/schema/rides.model";
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
-import type { CreateRideInput } from "@/db/types/ride.types";
+import type { CreateRideInput } from "@/db/types/rides.types";
 import { normalizeDateOnly } from "@/helpers/normalizeDate";
 
 export const createRide = async (rideData: CreateRideInput) => {
@@ -21,7 +21,7 @@ export const createRide = async (rideData: CreateRideInput) => {
 };
 
 export const updateRide = async (
-  rideId: number,
+  rideId: string,
   updateData: Partial<CreateRideInput>,
 ) => {
   try {
@@ -55,6 +55,26 @@ export const getAllRides = async () => {
     return result;
   } catch (error) {
     console.error("RidesService [getAllRides] Error:", error);
+    throw error;
+  }
+};
+
+export const getRideById = async (rideId: string) => {
+  try {
+    const result = await db.select().from(rides).where(eq(rides.id, rideId));
+    return result;
+  } catch (error) {
+    console.error("RidesService [getRideById] Error:", error);
+    throw error;
+  }
+};
+
+export const deleteRide = async (rideId: string) => {
+  try {
+    const result = await db.delete(rides).where(eq(rides.id, rideId));
+    return result;
+  } catch (error) {
+    console.error("RideService [deleteRide] Error.", error);
     throw error;
   }
 };
