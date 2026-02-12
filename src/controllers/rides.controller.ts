@@ -16,8 +16,8 @@ export const createRideController: Controller = async (req, res) => {
   try {
     const results = await createRideSchema.validateAsync(req.body);
 
-    const userId = Number(req.user?._id);
-    if (!Number.isFinite(userId) || userId <= 0) {
+    const userId = req.user?._id;
+    if (!userId || userId.trim() === "") {
       return r.fail({ message: "User ID not found" });
     }
 
@@ -47,8 +47,8 @@ export const updateRideController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
     const result = await createRideSchema.validateAsync(req.body);
-    const rideId = Number(req.params.rideId);
-    if (!Number.isFinite(rideId) || rideId <= 0) {
+    const rideId = req.params.rideId;
+    if (!rideId || rideId.trim() === "") {
       return r.fail({ message: "Invalid ride ID" });
     }
     const updatedRide = await updateRide(rideId, result);
@@ -74,7 +74,7 @@ export const getallRidesController: Controller = async (req, res) => {
 export const getRideByIdController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const result = await getRideById(Number(req.params.rideId));
+    const result = await getRideById(req.params.rideId);
     if (!result) {
       return r.fail({ message: "Ride not found" });
     }
@@ -88,7 +88,7 @@ export const getRideByIdController: Controller = async (req, res) => {
 export const deleteRideController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const result = await deleteRide(Number(req.params.rideId));
+    const result = await deleteRide(req.params.rideId);
     return r.success({ message: "Ride Deleted Successfully" });
   } catch (error) {
     console.error("RideController [deleteRideController] Error.", error);
