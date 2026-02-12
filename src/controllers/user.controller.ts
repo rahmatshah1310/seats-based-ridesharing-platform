@@ -95,9 +95,9 @@ export const login: Controller = async (req, res) => {
 export const get_me: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const userId = Number((req as any).user?._id);
+    const userId = req.user?._id;
 
-    if (!Number.isInteger(userId) || userId <= 0) {
+    if (!userId || userId.trim() === "") {
       return r.fail("Unauthorized");
     }
 
@@ -134,22 +134,25 @@ export const get_me: Controller = async (req, res) => {
     );
   } catch (error) {
     console.error("UserController [get_me] Error:", error);
-    r.serverError(error);
+    return r.serverError(error);
   }
 };
 
 export const getUserProfile: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
+    if (!userId || userId.trim() === "") {
+      return r.fail({ message: "Invalid user ID" });
+    }
     const user = await getUserById(userId);
     if (!user) {
-      r.fail("User not found");
+      return r.fail("User not found");
     }
-    r.success(user, "User profile retrieved successfully");
+    return r.success(user, "User profile retrieved successfully");
   } catch (error) {
     console.error("UserController [getUserProfile] Error:", error);
-    r.serverError(error);
+    return r.serverError(error);
   }
 };
 
@@ -160,7 +163,7 @@ export const allUsers: Controller = async (req, res) => {
     return r.success(users, "All Users Fetched Successfully");
   } catch (error) {
     console.error("UserController [getAllUsers] Error:", error);
-    r.serverError(error);
+    return r.serverError(error);
   }
 };
 
@@ -172,30 +175,36 @@ export const getUsersByRole: Controller = async (req, res) => {
     return r.success(users, " Successfully Getted Users by Role");
   } catch (error) {
     console.error("UserController [getUsersByRole] Error:", error);
-    r.serverError(error);
+    return r.serverError(error);
   }
 };
 
 export const deleteUser: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
+    if (!userId || userId.trim() === "") {
+      return r.fail({ message: "Invalid user ID" });
+    }
     const deletedUser = await deleteUsers(userId);
     return r.success(deletedUser, "User Deleted Successfully");
   } catch (error) {
     console.error("UserController [deleteUser] Error:", error);
-    r.serverError(error);
+    return r.serverError(error);
   }
 };
 
 export const driverApprove: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
+    if (!userId || userId.trim() === "") {
+      return r.fail({ message: "Invalid user ID" });
+    }
     const approvedUser = await approveDriver(userId);
     return r.success(approvedUser, "Driver Approved Successfully");
   } catch (error) {
     console.error("UserController [driverApprove] Error:", error);
-    r.serverError(error);
+    return r.serverError(error);
   }
 };
