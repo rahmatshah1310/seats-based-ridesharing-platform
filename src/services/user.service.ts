@@ -115,7 +115,7 @@ export const loginUser = async (phone: string) => {
   }
 };
 
-export const getUserById = async (userId: number) => {
+export const getUserById = async (userId: string) => {
   try {
     const [user] = await db
       .select()
@@ -160,9 +160,9 @@ export const getUserById = async (userId: number) => {
   }
 };
 
-export const getCurrentUser = async (userId: number) => {
+export const getCurrentUser = async (userId: string) => {
   try {
-    if (!Number.isInteger(userId) || userId <= 0) {
+    if (!userId || userId.trim() === "") {
       throw new Error("Invalid user id");
     }
 
@@ -205,7 +205,7 @@ export const getUserByRole = async (role: userRole) => {
   }
 };
 
-export const deleteUsers = async (userId: number) => {
+export const deleteUsers = async (userId: string) => {
   try {
     const deleteUser = await db
       .update(users)
@@ -222,7 +222,7 @@ export const deleteUsers = async (userId: number) => {
   }
 };
 
-export const approveDriver = async (userId: number) => {
+export const approveDriver = async (userId: string) => {
   try {
     if (!userId) {
       throw new Error("User id is required");
