@@ -33,7 +33,7 @@ export const ensureAuthenticated: RequestHandler = async (req, res, next) => {
       algorithms: ["HS256"],
     });
 
-    const userId = Number((decoded as { id: string }).id);
+    const userId = (decoded as { id: string }).id;
     const user = await getUserById(userId);
     if (!user) return r.fail("Unauthorized");
     if (user.status === "blocked") {
