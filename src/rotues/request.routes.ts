@@ -6,6 +6,7 @@ import {
   getAllRideRequestsController,
   getRideRequestByIdController,
   requestToSpecificRideController,
+  respondToRideRequestController,
   updateRideRequestController,
 } from "@/controllers/rideRequest.controller";
 import { authorizeRoles, ensureAuthenticated } from "@/middlewares/auth.mw.js";
@@ -37,6 +38,14 @@ router.post(
   authorizeRoles("passenger"),
   requestToSpecificRideController,
 );
+
+router.post(
+  "/respondToRideRequest/:id",
+  ensureAuthenticated,
+  authorizeRoles("passenger", "driver"),
+  respondToRideRequestController,
+);
+
 router.put(
   "/updateRideRequest/:id",
   ensureAuthenticated,
