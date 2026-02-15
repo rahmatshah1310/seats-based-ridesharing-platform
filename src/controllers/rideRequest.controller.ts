@@ -3,6 +3,9 @@ import {
   updateRideRequest,
   getAllRideRequests,
   requestToSpecificRide,
+  getRideRequestById,
+  deleteRideRequest,
+  respondToRideRequest,
 } from "@/services/rideRequest.service";
 import type { Controller } from "@/db/types/controller";
 import type { ResponseWithHelpers } from "@/middlewares/response.mw";
@@ -11,6 +14,7 @@ import {
   requestToSpecificRideSchema,
   updateRideRequestSchema,
 } from "../validations/request.schema";
+import { AppError } from "@/helpers/appError";
 
 export const createRideRequestController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
@@ -27,6 +31,35 @@ export const createRideRequestController: Controller = async (req, res) => {
       "RideRequestController [createRideRequestController] Error:",
       error,
     );
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
+    return r.serverError(error);
+  }
+};
+
+export const respondToRideRequestController: Controller = async (req, res) => {
+  const r = res as ResponseWithHelpers;
+  try {
+    const { id: requestId } = req.params;
+    const { response } = req.body;
+
+    if (!requestId || !response) {
+      return r.fail({ message: "Missing required fields" });
+    }
+
+    const result = await respondToRideRequest(
+      requestId,
+      req.user?._id!,
+      response,
+    );
+    return r.success(result, "Ride request responded to successfully");
+  } catch (error) {
+    console.error(
+      "RideRequestController [respondToRideRequestController] Error:",
+      error,
+    );
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
@@ -55,6 +88,8 @@ export const requestToSpecificRideController: Controller = async (req, res) => {
       "RideRequestController [requestToSpecificRideController] Error:",
       error,
     );
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
@@ -80,6 +115,8 @@ export const updateRideRequestController: Controller = async (req, res) => {
       "RideRequestController [updateRideRequestController] Error:",
       error,
     );
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
@@ -94,6 +131,46 @@ export const getAllRideRequestsController: Controller = async (req, res) => {
       "RideRequestController [getAllRideRequestsController] Error:",
       error,
     );
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
+    return r.serverError(error);
+  }
+};
+
+export const getRideRequestByIdController: Controller = async (req, res) => {
+  const r = res as ResponseWithHelpers;
+  try {
+    const requestId = req.params.id;
+    const passengerId = req.user?._id;
+
+    const rideRequest = await getRideRequestById(requestId, passengerId);
+    return r.success(rideRequest, "Ride Request retrieved successfully");
+  } catch (error) {
+    console.error(
+      "RideRequestController [getRideRequestByIdController] Error:",
+      error,
+    );
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
+    return r.serverError(error);
+  }
+};
+
+export const deleteRideRequestController: Controller = async (req, res) => {
+  const r = res as ResponseWithHelpers;
+  try {
+    const passengerId = req.user?._id;
+    const requestId = req.params.id;
+
+    await deleteRideRequest(requestId);
+    return r.success(null, "Ride Request deleted successfully");
+  } catch (error) {
+    console.error(
+      "RideRequestController [deleteRideRequestController] Error:",
+      error,
+    );
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
