@@ -9,6 +9,7 @@ import type { Controller } from "@/db/types/controller";
 import type { ResponseWithHelpers } from "@/middlewares/response.mw";
 import type { CreateRideInput } from "@/db/types/rides.types";
 import { createRideSchema } from "../validations/rides.schema";
+import { AppError } from "@/helpers/appError";
 
 export const createRideController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
@@ -39,7 +40,9 @@ export const createRideController: Controller = async (req, res) => {
     return r.success(ride, "Ride created successfully");
   } catch (error) {
     console.error("RidesController [createRideController] Error:", error);
-    return (res as ResponseWithHelpers).serverError(error);
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
+    return r.serverError(error);
   }
 };
 
@@ -55,6 +58,8 @@ export const updateRideController: Controller = async (req, res) => {
     return r.success(updatedRide, "Ride updated successfully");
   } catch (error) {
     console.error("RidesController [updateRideController] Error:", error);
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
@@ -67,6 +72,8 @@ export const getallRidesController: Controller = async (req, res) => {
     return r.success(result, "Rides fetched successfully");
   } catch (error) {
     console.error("RideController [getallRidesController] Error", error);
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
@@ -81,6 +88,8 @@ export const getRideByIdController: Controller = async (req, res) => {
     return r.success(result, "Ride fetched successfully");
   } catch (error) {
     console.error("RidesController [getRideByIdController] Error:", error);
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
@@ -92,6 +101,8 @@ export const deleteRideController: Controller = async (req, res) => {
     return r.success({ message: "Ride Deleted Successfully" });
   } catch (error) {
     console.error("RideController [deleteRideController] Error.", error);
+    if (error instanceof AppError)
+      return r.fail(error.message, error.statusCode);
     return r.serverError(error);
   }
 };
