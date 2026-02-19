@@ -40,9 +40,9 @@ export const registerUser: Controller = async (req, res) => {
     const user = await createUser(body);
     r.success({ phone: user.phone }, "User registered successfully");
   } catch (error) {
-    return r.fail((error as Error).message);
+    r.fail((error as Error).message);
     console.error("UserController [registerUser] Error:", error);
-    r.serverError(error);
+    return r.serverError(error);
   }
 };
 
@@ -158,14 +158,23 @@ export const getUserProfile: Controller = async (req, res) => {
 
 export const allUsers: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
+
   try {
-    const users = await getAllUsers();
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const pageSize = Math.min(
+      50,
+      Math.max(1, Number(req.query.pageSize) || 10)
+    );
+
+    const users = await getAllUsers(page, pageSize);
+
     return r.success(users, "All Users Fetched Successfully");
   } catch (error) {
     console.error("UserController [getAllUsers] Error:", error);
     return r.serverError(error);
   }
 };
+
 
 export const getUsersByRole: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
@@ -202,6 +211,12 @@ export const driverApprove: Controller = async (req, res) => {
       return r.fail({ message: "Invalid user ID" });
     }
     const approvedUser = await approveDriver(userId);
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(userId).emit("driverApproved", approvedUser);
+    }
+
     return r.success(approvedUser, "Driver Approved Successfully");
   } catch (error) {
     console.error("UserController [driverApprove] Error:", error);
