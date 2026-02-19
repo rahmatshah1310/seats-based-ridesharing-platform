@@ -2,6 +2,7 @@ import app from "@/app.ts";
 import createDebug from "debug";
 import http, { Server } from "http";
 import "dotenv/config";
+import { configureSockets } from "@/config/socket";
 
 const debug = createDebug("seats-based-ridesharing-platform:server");
 
@@ -9,6 +10,8 @@ const port = normalizePort(process.env.PORT);
 app.set("port", port);
 
 const server: Server = http.createServer(app);
+const io = configureSockets(server)
+app.set('io', io)
 
 server.listen(port, () => console.log(`🚀 Server Running on Port: ${port}`));
 server.on("error", onError);
