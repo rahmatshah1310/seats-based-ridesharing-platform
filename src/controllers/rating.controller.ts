@@ -1,5 +1,6 @@
 import {
   createRating,
+  deleteRating,
 } from "@/services/rating.service";
 import type { Controller } from "@/db/types/controller";
 import type { ResponseWithHelpers } from "@/middlewares/response.mw";
@@ -33,3 +34,17 @@ export const createRatingController: Controller = async (req, res) => {
     return r.serverError(error);
   }
 };
+
+export const deletingRatingController: Controller = async (req, res) => {
+  const r = res as ResponseWithHelpers;
+  const ratingId = req.params.ratingId;
+  const raterId = req.user?._id;
+  try {
+    const result = await deleteRating(raterId, ratingId)
+    return r.success("Rating deleted successfully");
+  } catch (error) {
+    console.error("RatingController [deleteRatingController] Error.", error)
+    if (error instanceof AppError) return r.fail(error.message, error.statusCode);
+    return r.serverError(error);
+  }
+}
