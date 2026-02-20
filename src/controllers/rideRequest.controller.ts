@@ -25,6 +25,12 @@ export const createRideRequestController: Controller = async (req, res) => {
       return r.fail({ message: "Invalid passenger ID" });
     }
     const rideRequest = await createRideRequest({ ...result, passengerId });
+
+    const io = req.app.get("io")
+    if (io) {
+      io.to("driver").emit("ride:request:new", rideRequest);
+    }
+
     return r.success(rideRequest, "Ride Request created successfully");
   } catch (error) {
     console.error(
@@ -52,6 +58,12 @@ export const respondToRideRequestController: Controller = async (req, res) => {
       req.user?._id!,
       response,
     );
+
+    const io = req.app.get("io")
+    if (io) {
+      io.to("driver").emit("ride:request:passengerResponse", result);
+      io.to("passenger").emit("ride:request:driverResponse", result);
+    }
     return r.success(result, "Ride request responded to successfully");
   } catch (error) {
     console.error(
@@ -82,6 +94,10 @@ export const requestToSpecificRideController: Controller = async (req, res) => {
       requiredSeats,
     );
 
+    const io = req.app.get("io")
+    if (io) {
+      io.to("driver").emit("ride:request:specific", rideRequest);
+    }
     return r.success(rideRequest, "Ride requested successfully");
   } catch (error) {
     console.error(
@@ -124,7 +140,9 @@ export const updateRideRequestController: Controller = async (req, res) => {
 export const getAllRideRequestsController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const rideRequests = await getAllRideRequests();
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const rideRequests = await getAllRideRequests(page, pageSize);
     return r.success(rideRequests, "Ride Requests retrieved successfully");
   } catch (error) {
     console.error(
