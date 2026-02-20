@@ -10,6 +10,7 @@ import type { ResponseWithHelpers } from "@/middlewares/response.mw";
 import type { CreateRideInput } from "@/db/types/rides.types";
 import { createRideSchema } from "../validations/rides.schema";
 import { AppError } from "@/helpers/appError";
+import { users } from "@/db/schema";
 
 export const createRideController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
@@ -35,8 +36,11 @@ export const createRideController: Controller = async (req, res) => {
       time: results.time,
       availableSeats: results.availableSeats,
     };
-
     const ride = await createRide(rideData);
+    const io = req.app.get("io")
+    if (io) {
+      io.to("passenger").emit("ride:new", ride);
+    }
     return r.success(ride, "Ride created successfully");
   } catch (error) {
     console.error("RidesController [createRideController] Error:", error);
@@ -67,8 +71,9 @@ export const updateRideController: Controller = async (req, res) => {
 export const getallRidesController: Controller = async (req, res) => {
   const r = res as ResponseWithHelpers;
   try {
-    const result = await getAllRides();
-    console.log(result, "result==========================>");
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const result = await getAllRides(page, pageSize);
     return r.success(result, "Rides fetched successfully");
   } catch (error) {
     console.error("RideController [getallRidesController] Error", error);
