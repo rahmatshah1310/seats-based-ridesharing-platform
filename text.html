@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      input {
+        width: 400px;
+        padding: 5px;
+        margin-bottom: 10px;
+      }
+      button {
+        padding: 5px 10px;
+      }
+      hr {
+        margin: 20px 0;
+      }
+      #status-indicator {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 10px;
+        vertical-align: middle;
+      }
+      .online {
+        background-color: #28a745; /* green */
+      }
+      .offline {
+        background-color: #dc3545; /* red */
+      }
+      #log-container {
+        margin-top: 15px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f8f9fa;
+        height: 300px;
+        overflow-y: scroll;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Socket Test Panel</h1>
+
+    <div>
+      <span id="status-indicator" class="offline"></span>
+      <span id="status-text">Disconnected</span>
+    </div>
+
+    <hr />
+
+    <div>
+      <h3>Connection</h3>
+      <input id="token" placeholder="Paste user JWT here" />
+      <button onclick="connectSocket()">Connect</button>
+    </div>
+
+    <hr />
+
+    <div>
+      <h3>Send Test Message</h3>
+      <input id="receiver" placeholder="receiver_id" value="" />
+      <input id="thread" placeholder="thread_id" value="" />
+      <input id="msg" placeholder="message text" value="Hello from the test panel!" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div id="log-container"></div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+      let socket;
+
+      // --- DOM Elements ---
+      const statusIndicator = document.getElementById("status-indicator");
+      const statusText = document.getElementById("status-text");
+      const logContainer = document.getElementById("log-container");
+
+      function log(message) {
+        console.log(message);
+        const logEntry = document.createElement("div");
+        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+
+      function connectSocket() {
+        if (socket) {
+          socket.disconnect();
+        }
+
+        const token = document.getElementById("token").value;
+        if (!token) {
+          return alert("Please paste a JWT token");
+        }
+
+        socket = io("http://localhost:3000", { auth: { token } });
+
+        // --- Generic Event Handlers ---
+        socket.on("connect", () => {
+          console.log(`✅ CONNECTED with socket.id: ${socket.id}`);
+          statusIndicator.classList.remove("offline");
+          statusIndicator.classList.add("online");
+          statusText.textContent = `Connected (socket.id: ${socket.id})`;
+        });
+
+        socket.on("connect_error", (err) => {
+          console.log(`❌ CONNECTION ERROR: ${err.message}`);
+        });
+
+        socket.on("disconnect", (reason) => {
+          console.log(`🔌 DISCONNECTED: ${reason}`);
+          statusIndicator.classList.remove("online");
+          statusIndicator.classList.add("offline");
+          statusText.textContent = "Disconnected";
+        });
+
+        // --- App-specific Event Handlers ---
+        
+        // MESSAGING EVENTS
+        socket.on("receiveMessage", (msg) => log(`📥 'receiveMessage': ${JSON.stringify(msg)}`));
+        socket.on("userTyping", (data) => log(`⌨️ 'userTyping': ${JSON.stringify(data)}`));
+        socket.on("messageRead", (data) => log(`📩 'messageRead': ${JSON.stringify(data)}`));
+        
+        // USER STATUS EVENTS
+        socket.on("userOnline", (data) => log(`🟢 'userOnline': User ${data.userId} is online.`));
+        socket.on("userOffline", (data) => log(`🔴 'userOffline': User ${data.userId} has gone offline.`));
+        
+        // RIDE EVENTS
+        socket.on("ride:new", (data) => log(`🚗 'ride:new': ${JSON.stringify(data)}`));
+        socket.on("ride:cancelled", (data) => log(`🚫 'ride:cancelled': ${JSON.stringify(data)}`));
+        socket.on("ride:status:updated", (data) => log(`🔄 'ride:status:updated': ${JSON.stringify(data)}`));
+        
+        // RIDE REQUEST EVENTS
+        socket.on("ride:request:new", (data) => log(`📨 'ride:request:new': ${JSON.stringify(data)}`));
+        socket.on("ride:request:specific", (data) => log(`🎯 'ride:request:specific': ${JSON.stringify(data)}`));
+        socket.on("ride:request:driverResponse", (data) => log(`👨‍✈️ 'ride:request:driverResponse': ${JSON.stringify(data)}`));
+        socket.on("ride:request:passengerResponse", (data) => log(`🧑 'ride:request:passengerResponse': ${JSON.stringify(data)}`));
+        socket.on("ride:request:update", (data) => log(`♻️ 'ride:request:update': ${JSON.stringify(data)}`));
+        socket.on("ride:request:cancelled", (data) => log(`❌ 'ride:request:cancelled': ${JSON.stringify(data)}`));
+        
+        // OFFER EVENTS
+        socket.on("ride:request:offered", (data) => log(`💌 'ride:request:offered': ${JSON.stringify(data)}`));
+        socket.on("ride:request:offerAccepted", (data) => log(`✅ 'ride:request:offerAccepted': ${JSON.stringify(data)}`));
+        // Note: offerDeclined and offerExpired are not currently emitted in the codebase
+        
+        // DRIVER APPROVAL EVENTS
+        socket.on("driver:approved", (data) => log(`🚗 'driver:approved': ${JSON.stringify(data)}`));
+        socket.on("driver:rejected", (data) => log(`🚫 'driver:rejected': ${JSON.stringify(data)}`));
+        socket.on("driver:reverification:required", (data) => log(`🔄 'driver:reverification:required': ${JSON.stringify(data)}`));
+        
+        // ADMIN EVENTS
+        socket.on("admin:driver:approved", (data) => log(`✅ 'admin:driver:approved': ${JSON.stringify(data)}`));
+        socket.on("admin:driver:rejected", (data) => log(`❌ 'admin:driver:rejected': ${JSON.stringify(data)}`));
+        socket.on("admin:driver:updated-sensitive", (data) => log(`⚠️ 'admin:driver:updated-sensitive': ${JSON.stringify(data)}`));
+        // Note: admin:driver:pending is not currently emitted in the codebase
+        
+        // BOOKING EVENTS (currently commented out in codebase)
+        // socket.on("booking:new", (data) => log(`🎫 'booking:new': ${JSON.stringify(data)}`));
+        // socket.on("booking:cancelled", (data) => log(`🎫 'booking:cancelled': ${JSON.stringify(data)}`));
+
+        // ERROR HANDLING
+        socket.on("error", (data) => log(`‼️ SERVER ERROR: ${JSON.stringify(data)}`));
+      }
+
+      function sendMessage() {
+        if (!socket || !socket.connected) {
+          return alert("You must be connected to send a message.");
+        }
+
+        const payload = {
+          receiver_id: document.getElementById("receiver").value,
+          thread_id: document.getElementById("thread").value,
+          message: document.getElementById("msg").value,
+        };
+
+        log(`🚀 SENDING 'sendMessage': ${JSON.stringify(payload)}`);
+
+        socket.emit("sendMessage", payload, (ack) => {
+          log(`✅ SERVER ACK for sendMessage: ${JSON.stringify(ack)}`);
+        });
+      }
+    </script>
+  </body>
+</html>
