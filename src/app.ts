@@ -14,6 +14,7 @@ import { responseMiddleware } from "./middlewares/response.mw";
 
 // Routes
 import apiRouter from "./rotues/index";
+import webhookRouter from "./rotues/webhook.routes";
 
 const app = express();
 
@@ -30,8 +31,15 @@ const app = express();
 app.use(responseMiddleware);
 
 // Body parsers
+app.use(
+  express.json({
+    limit: "200mb",
+    verify: (req: any, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: "200mb" }));
-app.use(express.json({ limit: "200mb" }));
 
 app.use(loggerMiddleware);
 
@@ -64,6 +72,7 @@ app.get("/", (req: Request, res: Response) => {
 
 // API routes
 app.use("/api/v1", apiRouter);
+app.use("/api/webhooks", webhookRouter);
 
 // 404 handler
 app.use((req: Request, res: Response, next: NextFunction) => {
