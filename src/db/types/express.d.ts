@@ -2,7 +2,8 @@ import "express";
 
 declare module "express-serve-static-core" {
   interface Request {
-    user?:AuthUser;
+    user?: AuthUser;
+    rawBody?: Buffer;
     files?: {
       profileImage?: Express.Multer.File[];
       vehicleImages?: Express.Multer.File[];
