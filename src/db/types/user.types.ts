@@ -3,6 +3,7 @@ export type userRole = "admin" | "passenger" | "driver";
 export interface CreateUserInput {
   name: string;
   phone: string;
+  email?: string;
   cnic: string;
   city: string;
   district: string;
