@@ -2,8 +2,9 @@ import { users } from "@/db/schema/user.model";
 import { driverProfiles } from "@/db/schema/driverProfile.model";
 import { passengerProfiles } from "@/db/schema/passengerProfile.model";
 import { db } from "@/db/db";
-import { and, eq, ne } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { CreateUserInput, userRole } from "@/db/types/user.types";
+import { stripe } from "@/libs/stripe";
 
 export const createUser = async (userData: CreateUserInput) => {
   try {
@@ -13,6 +14,7 @@ export const createUser = async (userData: CreateUserInput) => {
         .values({
           name: userData.name,
           phone: userData.phone,
+          email: userData.email,
           cnic: userData.cnic,
           city: userData.city,
           district: userData.district,
@@ -42,6 +44,24 @@ export const createUser = async (userData: CreateUserInput) => {
       }
 
       if (user.role === "driver") {
+        // Create Stripe Customer
+        let stripeCustomerId: string | undefined;
+        if (user.email) {
+          try {
+            const customer = await stripe.customers.create({
+              email: user.email,
+              name: user.name,
+              metadata: { userId: user.id },
+            });
+            stripeCustomerId = customer.id;
+
+            // Update user record with stripeCustomerId
+            await tx.update(users).set({ stripeCustomerId }).where(eq(users.id, user.id));
+          } catch (stripeError) {
+            console.error("Stripe Customer Creation Error:", stripeError);
+          }
+        }
+
         await tx.insert(driverProfiles).values({
           userId: user.id,
           cnic: userData.cnic,
@@ -177,14 +197,26 @@ export const getCurrentUser = async (userId: string) => {
   }
 };
 
-export const getAllUsers = async () => {
+export const getAllUsers = async (page: number = 1, pageSize: number = 10) => {
   try {
+
+    const offset = (page - 1) * pageSize
     const usersList = await db
       .select()
       .from(users)
-      .where(and(eq(users.isDeleted, false), ne(users.role, "admin")));
+      .where(and(eq(users.isDeleted, false), ne(users.role, "admin"))).orderBy(desc(users.createdAt)).limit(pageSize).offset(offset)
 
-    return usersList;
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(users).where(and(eq(users.isDeleted, false), ne(users.role, "admin")))
+
+    return {
+      users: usersList,
+      pagination: {
+        total: Number(count),
+        page,
+        pageSize,
+        totalPages: Math.ceil(Number(count) / pageSize)
+      }
+    };
   } catch (error) {
     console.error("UserService [getAllUsers] Error:", error);
     throw new Error("Could not fetch users");
