@@ -1,6 +1,6 @@
 import { rideRequests } from "@/db/schema/rideRequest.model";
 import { db } from "@/db/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import type { CreateRideRequestInput } from "@/db/types/rideRequest.types";
 import { rides } from "@/db/schema/rides.model";
 import { normalizeDateOnly } from "@/helpers/normalizeDate";
@@ -254,10 +254,20 @@ export const updateRideRequest = async (
   }
 };
 
-export const getAllRideRequests = async () => {
+export const getAllRideRequests = async (page: number = 1, pageSize: number = 10) => {
   try {
-    const result = await db.select().from(rideRequests);
-    return result;
+    const offset = (page - 1) * pageSize
+    const result = await db.select().from(rideRequests).orderBy(desc(rideRequests.createdAt)).limit(pageSize).offset(offset);
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(rideRequests)
+    return {
+      rideRequests: result,
+      pagination: {
+        total: Number(count),
+        page,
+        pageSize,
+        totalPages: Math.ceil(Number(count) / pageSize)
+      }
+    };
   } catch (error) {
     console.error("RideRequestService [getAllRideRequests] Error:", error);
     throw error;
