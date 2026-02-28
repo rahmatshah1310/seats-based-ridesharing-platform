@@ -1,8 +1,11 @@
 import { rides } from "@/db/schema/rides.model";
 import { db } from "@/db/db";
-import { eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import type { CreateRideInput } from "@/db/types/rides.types";
 import { normalizeDateOnly } from "@/helpers/normalizeDate";
+import { rideRequests } from "@/db/schema/rideRequest.model";
+import { users } from "@/db/schema/user.model";
+import { AppError } from "@/helpers/appError";
 
 export const createRide = async (rideData: CreateRideInput) => {
   try {
@@ -49,10 +52,20 @@ export const updateRide = async (
   }
 };
 
-export const getAllRides = async () => {
+export const getAllRides = async (page: number = 1, pageSize: number = 10) => {
   try {
-    const result = await db.select().from(rides);
-    return result;
+    const offset = (page - 1) * pageSize
+    const result = await db.select().from(rides).orderBy(desc(rides.createdAt)).limit(pageSize).offset(offset);
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(rides)
+    return {
+      rides: result,
+      pagination: {
+        total: Number(count),
+        page,
+        pageSize,
+        totalPages: Math.ceil(Number(count) / pageSize)
+      }
+    };
   } catch (error) {
     console.error("RidesService [getAllRides] Error:", error);
     throw error;
@@ -61,8 +74,31 @@ export const getAllRides = async () => {
 
 export const getRideById = async (rideId: string) => {
   try {
-    const result = await db.select().from(rides).where(eq(rides.id, rideId));
-    return result;
+    const [ride] = await db.select().from(rides).where(eq(rides.id, rideId));
+
+    if (!ride) {
+      throw new AppError("Ride not found", 404);
+    }
+    const passengerRequests = await db
+      .select({
+        passengerId: rideRequests.passengerId,
+        requiredSeats: rideRequests.requiredSeats,
+        status: rideRequests.status,
+        driverResponse: rideRequests.driverResponse,
+        passengerResponse: rideRequests.passengerResponse,
+        name: users.name,
+        phone: users.phone,
+        profileImage: users.profileImage,
+      })
+      .from(rideRequests)
+      .innerJoin(users, eq(rideRequests.passengerId, users.id))
+      .where(eq(rideRequests.matchedRideId, rideId));
+
+    return {
+      ...ride,
+      passengers: passengerRequests,
+      passengerRequestCount: passengerRequests.length,
+    };
   } catch (error) {
     console.error("RidesService [getRideById] Error:", error);
     throw error;
