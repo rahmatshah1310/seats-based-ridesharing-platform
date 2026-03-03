@@ -64,6 +64,14 @@ export const configureSockets = (server: any) => {
         } catch (error) {
             console.error("Socket connection error:", error);
         }
+
+        // client.on("sendMessage", async (data) => {
+        //     try {
+
+        //     } catch (error) {
+
+        //     }
+        // })
     });
 
     return io;
