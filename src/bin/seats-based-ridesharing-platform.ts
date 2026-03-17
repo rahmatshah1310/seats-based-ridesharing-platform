@@ -2,7 +2,7 @@ import app from "@/app.ts";
 import createDebug from "debug";
 import http, { Server } from "http";
 import "dotenv/config";
-import { configureSockets } from "@/config/socket";
+import { configureSockets } from "@/services/socket.service";
 
 const debug = createDebug("seats-based-ridesharing-platform:server");
 
